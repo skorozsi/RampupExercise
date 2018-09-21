@@ -29,7 +29,7 @@ namespace Users.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-            services.AddScoped<IUserCreationLogService, UserCreationLogService>();
+            services.AddSingleton<IUserCreationLogService, UserCreationLogService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddSingleton<IDBProvider, InMemoryDbProvider>();
         }

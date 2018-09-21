@@ -15,13 +15,30 @@ namespace Users.Api.Services
 
     public class UserCreationLogService : IUserCreationLogService
     {
+
         public void Log(User user)
         {
-            var factory = new ConnectionFactory() { HostName = "localhost" };
+            const string amqpRabbit = "rabbitmq";
+            //const string amqpRabbit = "amqp://guest:guest@rabbit:5672";
+            var factory = new ConnectionFactory()
+            {
+                //Uri = new Uri(amqpRabbit),
+                HostName = amqpRabbit,
+                Port = 5672,
+                UserName = "guest",
+                Password = "guest",
+                RequestedHeartbeat = 60,
+                Ssl =
+                {
+                    ServerName = amqpRabbit,
+                    Enabled = false
+                }
+            };
             using (var connection = factory.CreateConnection())
             {
                 using (var channel = connection.CreateModel())
                 {
+
                     channel.QueueDeclare(queue: "usercreationlog",
                         durable: false,
                         exclusive: false,
@@ -35,8 +52,10 @@ namespace Users.Api.Services
                         routingKey: "usercreation",
                         basicProperties: null,
                         body: body);
+
                 }
             }
+
 
         }
     }

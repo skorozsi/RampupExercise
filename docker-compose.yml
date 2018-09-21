@@ -8,31 +8,29 @@ services:
       dockerfile: Users.Api/Dockerfile
     depends_on:
       - rabbit
-
-  loggerservice:
-    image: loggerservice
-    build:
-      context: .
-      dockerfile: LoggerService/Dockerfile
-    depends_on:
-      - rabbit
-      
+    links: 
+        - rabbit:rabbitmq
+     
   rabbit:
     image: rabbitmq:3-management
     hostname: rabbit
     container_name: rabbit
-    #expose:
-      #- 15672/TCP
-      #- 5671/TCP
-      #- 15671/TCP
-      #- 5672/TCP
-      #- 4369/TCP
+    expose:
+      - 5672
 
     ports:
       - "15672:15672"
-      - "5671:5671"
+      - "127.0.0.1:5671:5671"
       - "15671:15671"
-      - "5672:5672"
+      - "127.0.0.1:5672:5672"
       - "4369:4369"
 
     
+  consumerapp:
+    image: ${DOCKER_REGISTRY}consumerapp
+    build:
+      context: .
+      dockerfile: ConsumerApp/Dockerfile
+    links: 
+        - rabbit:rabbitmq
+
