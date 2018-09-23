@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
+using Users.Api.Models;
 using Users.Api.Providers;
 using Users.Api.Repositories;
 using Users.Api.Services;
@@ -32,6 +34,8 @@ namespace Users.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<ApiContext>(opt => opt.UseInMemoryDatabase("usersdb"));
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             //services.AddDbContext<UserContext>(opt => opt.UseInMemoryDatabase("UsersApi"));
@@ -66,12 +70,12 @@ namespace Users.Api
 
 
             services.AddSingleton<IUserCreationLogService, UserCreationLogService>();
-            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserRepository, UserDBRepository>();
             services.AddSingleton<IDBProvider, InMemoryDbProvider>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
         {
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
@@ -88,7 +92,38 @@ namespace Users.Api
                 app.UseDeveloperExceptionPage();
             }
 
+            var context = serviceProvider.GetService<ApiContext>();
+            AddTestData(context);
+
             app.UseMvc();
+        }
+
+        private static void AddTestData(ApiContext context)
+        {
+            var luke = new User
+            {
+                Id = 1,
+                Name = "Luke Skywalker",
+                DoB= DateTime.Today.AddYears(-20)
+            };
+            var obiOne = new User
+            {
+                Id = 2,
+                Name = "Obivan Kenobi",
+                DoB= DateTime.Today.AddYears(-80)
+            };
+            var darthVader = new User
+            {
+                Id = 3,
+                Name = "Darth Vader",
+                DoB= DateTime.Today.AddYears(-60)
+            };
+
+            context.Users.Add(obiOne);
+            context.Users.Add(luke);
+            context.Users.Add(darthVader);
+
+            context.SaveChanges();
         }
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

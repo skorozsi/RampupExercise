@@ -131,6 +131,9 @@ namespace Users.Api.Controllers
         [ProducesResponseType(404, Type = typeof(int))]
         public ActionResult Put(int id, [FromBody] User user)
         {
+            if (user == null || user.Id != id)
+                return BadRequest();
+            
             var existingUser = _userRepository.Get(id);
             if (existingUser == null)
             {
