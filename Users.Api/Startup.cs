@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,12 +12,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.Swagger;
 using Users.Api.Providers;
 using Users.Api.Repositories;
 using Users.Api.Services;
 
 namespace Users.Api
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -29,6 +33,38 @@ namespace Users.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            //services.AddDbContext<UserContext>(opt => opt.UseInMemoryDatabase("UsersApi"));
+
+            // Register the Swagger generator, defining 1 or more Swagger documents
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info
+                {
+                    Title = "Users API",
+                    Version = "v1",
+                    Description = "CRUD services for Users. User creation is logged using RabbitMQ to a consumer application.",
+                    TermsOfService = "None",
+                    Contact = new Contact
+                    {
+                        Name = "Sandor Korozsi",
+                        Email = string.Empty,
+                        Url = "https://twitter.com/skorozsi"
+                    },
+                    License = new License
+                    {
+                        Name = "Use under LICX",
+                        Url = "https://example.com/license"
+                    }
+                });
+
+                // Set the comments path for the Swagger JSON and UI.
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+            });
+
+
             services.AddSingleton<IUserCreationLogService, UserCreationLogService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddSingleton<IDBProvider, InMemoryDbProvider>();
@@ -37,6 +73,16 @@ namespace Users.Api
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            // Enable middleware to serve generated Swagger as a JSON endpoint.
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
+            // specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Users API V1");
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -45,4 +91,6 @@ namespace Users.Api
             app.UseMvc();
         }
     }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 }
